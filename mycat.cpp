@@ -3,110 +3,103 @@
 #include <string>
 
 #ifdef _WIN32
+
 #include <Windows.h>
 
-void set_cp_stdout()
-{
-	SetConsoleCP(65001);
-	SetConsoleOutputCP(65001);
+void set_cp_out() {
+	SetConsoleOutputCP(CP_UTF8);
+    SetConsoleCP(CP_UTF8);
 }
 
 #endif
 
-int main(int argc, char* argv[])
-{
+void print_help() {
+	std::cout << "mycat - analog of cat in unix-like systems\n"
+		"Flags:\n"
+		"  -n  number the lines\\rows\n"
+		"  -s  output the total amount of rows\n"
+		"  -h  this help command\n";
+}
+
+int main(int argc, char* argv[]) {
+
 #ifdef _WIN32
-	set_cp_stdout();
+	set_cp_out();
 #endif
 
-	if (argc < 2)
-	{
-		std::cerr << "Invalid or no arg\n";
+	std::string line{};
+	bool numbers_of_lines{ false };
+	bool total_amount_of_rows{ false };
+	int n_l{ 0 };
+	int first_file_idx{ argc };
+	int status{ 0 };
+
+	if (argc < 2) {
+		std::cerr << "No flags or invalid\n";
 		return 1;
 	}
 
-	int n = 0;
-	bool nums_of_lines = false;
-	bool string_count = false;
-	int status = 0;
-	int no_line = 0;
-	int first_flag = 1;
+	for (int i = 1; i < argc; i++) {
 
-	while (first_flag < argc && argv[first_flag][0] == '-')
-	{
-		std::string arg = argv[first_flag];
+		if (argv[i][0] == '-') {
+			for (int j = 1; argv[i][j] != '\0'; j++) {
+				switch (argv[i][j]) {
+				case 'n':
+					numbers_of_lines = true;
+					break;
 
+				case 's':
+					total_amount_of_rows = true;
+					break;
 
-		if (arg == "-n")
-		{
-			nums_of_lines = true;
+				case 'h':
+					print_help();
+					return 0;
+					break;
+
+				default:
+					std::cerr << "Invalid flag: " << argv[i] << '\n';
+					return 1;
+				}
+			}
 		}
 
-		else if (arg == "-s")
-		{
-			string_count = true;
+		else {
+			first_file_idx = i;
+			break;
 		}
-
-		else if (arg == "-h")
-		{
-			std::cout << "mycat, analog of cat in unix systems\n";
-			std::cout << "flags: \n";
-			std::cout << "-n - toggle numbers of lines\n";
-			std::cout << "-s - display the total number of lines\n";
-			return 0;
-		}
-
-		else
-		{
-			std::cerr << "Invalid flag " << arg << '\n';
-			return 1;
-		}
-
-		first_flag++;
 	}
 
-	if (first_flag >= argc)
-	{
-		std::cerr << "No input files\n";
+	if (first_file_idx == argc) {
+		std::cerr << "No file provided\n";
 		return 1;
 	}
 
+	for (int i = first_file_idx; i < argc; i++) {
 
-	for (int i = first_flag; i < argc; i++) {
 		std::ifstream f(argv[i]);
 
-		if (!f)
-		{
-			std::cerr << argv[i] << ": open failed\n";
+		if (!f) {
+			std::cerr << "Open failed: " << argv[i] << '\n';
 			status = 1;
 			continue;
 		}
 
-		std::string line;
+		while (std::getline(f, line)) {
+			n_l++;
 
-		while (std::getline(f, line))
-		{
-			if (nums_of_lines)
-			{
-				no_line++;
-				std::cout << no_line << ' ';
-			}
-
-			if (string_count)
-			{
-				n++;
+			if (numbers_of_lines) {
+				std::cout << n_l << ' ';
 			}
 
 			std::cout << line << '\n';
 		}
+
 	}
 
-	if (string_count)
-	{
-		std::cout << "strings: " << n << '\n';
+	if (total_amount_of_rows) {
+		std::cout << "rows: " << n_l << '\n';
 	}
 
 	return status;
 }
-
-// ну и хуета
